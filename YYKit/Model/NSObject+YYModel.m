@@ -450,8 +450,9 @@ static force_inline id YYValueForMultiKeys(__unsafe_unretained NSDictionary *dic
 @end
 
 
-/// A class info in object model.
+/// 对象模型中的类信息
 @interface _YYModelMeta : NSObject {
+    // 权限修饰符，只能框架内部使用，`@package`只适用于修饰ivar实例变量，不能修饰`@property`属性或方法
     @package
     YYClassInfo *_classInfo;
     /// Key:mapped key and key path, Value:_YYModelPropertyMeta.
@@ -1455,10 +1456,35 @@ static NSString *ModelDescription(NSObject *model) {
 }
 
 + (instancetype)modelWithDictionary:(NSDictionary *)dictionary {
+    
+    /**
+     空判断
+     `!dictionary`：判断的是nil、Nil、Null这三种空值，这三种空值都是`0x0`
+        此时调用这种类型的方法是安全的
+     
+     `dictionary == (id)kCFNull`：判断的 Core Foundation框架中的单例对象表示`空值`
+        kCFNull 等价于 [NSNull null]、[[NSNull alloc] init]，注意这种类型的地址值并不是`0x0`
+        当接口返回的字段对应了`null`，通过NSJSONSerialization解析后，就会变成kCFNull对象，比如：
+        `
+            NSString *jsonString = @"{\"name\":\"Alice\", \"age\":null, \"address\":{\"city\":null}}";
+            NSData *jsonData = [jsonString dataUsingEncoding:NSUTF8StringEncoding];
+            NSError *error;
+            NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:jsonData
+                                                          options:0
+                                                            error:&error];
+            此时dict[@"age"]就是kCFNull类型
+        `
+     */
     if (!dictionary || dictionary == (id)kCFNull) return nil;
+    
+    
+    // 判断是否是字典类型
     if (![dictionary isKindOfClass:[NSDictionary class]]) return nil;
     
+    // 获取当前类的类对象
     Class cls = [self class];
+    
+    //
     _YYModelMeta *modelMeta = [_YYModelMeta metaWithClass:cls];
     if (modelMeta->_hasCustomClassFromDictionary) {
         cls = [cls modelCustomClassForDictionary:dictionary] ?: cls;

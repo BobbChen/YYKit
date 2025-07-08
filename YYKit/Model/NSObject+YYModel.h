@@ -83,23 +83,21 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable instancetype)modelWithJSON:(id)json;
 
 /**
- Creates and returns a new instance of the receiver from a key-value dictionary.
- This method is thread-safe.
+ 通过键值字典创建返回一个调用者类型的实例对象
+ 该方法是线程安全的
  
- @param dictionary  A key-value dictionary mapped to the instance's properties.
- Any invalid key-value pair in dictionary will be ignored.
+ @param dictionary  映射到调用类的属性的字典
+ 字典中无效的键值对会被忽略
  
- @return A new instance created from the dictionary, or nil if an error occurs.
+ @return 通过字典创建的实例对象
  
- @discussion The key in `dictionary` will mapped to the reciever's property name,
- and the value will set to the property. If the value's type does not match the
- property, this method will try to convert the value based on these rules:
- 
-     `NSString` or `NSNumber` -> c number, such as BOOL, int, long, float, NSUInteger...
-     `NSString` -> NSDate, parsed with format "yyyy-MM-dd'T'HH:mm:ssZ", "yyyy-MM-dd HH:mm:ss" or "yyyy-MM-dd".
-     `NSString` -> NSURL.
-     `NSValue` -> struct or union, such as CGRect, CGSize, ...
-     `NSString` -> SEL, Class.
+ @discussion 字典中的键会被映射到调用类的属性名，键对应的值会被设置给对应的属性。如果值类型和类对应属性
+ 的类型不匹配，该方法将会根据以下规则进行转换：
+    `NSString` or `NSNumber` -> c number, 比如： BOOL, int, long, float, NSUInteger...
+    `NSString` -> NSDate, 用 "yyyy-MM-dd'T'HH:mm:ssZ", "yyyy-MM-dd HH:mm:ss" 或 "yyyy-MM-dd" 格式进行解析
+    `NSString` -> NSURL.
+    `NSValue` -> 结构体或联合体, 比如 CGRect, CGSize, ...
+    `NSString` -> SEL, Class.
  */
 + (nullable instancetype)modelWithDictionary:(NSDictionary *)dictionary;
 

@@ -143,7 +143,7 @@ YYEncodingType YYEncodingGetType(const char *typeEncoding);
 
 
 /**
- Class information for a class.
+ 一个类的类信息
  */
 @interface YYClassInfo : NSObject
 @property (nonatomic, assign, readonly) Class cls; ///< class object
