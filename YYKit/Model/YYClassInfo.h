@@ -77,7 +77,7 @@ YYEncodingType YYEncodingGetType(const char *typeEncoding);
 
 
 /**
- Instance variable information.
+ 实例变量信息
  */
 @interface YYClassIvarInfo : NSObject
 @property (nonatomic, assign, readonly) Ivar ivar;              ///< ivar opaque struct
@@ -97,7 +97,7 @@ YYEncodingType YYEncodingGetType(const char *typeEncoding);
 
 
 /**
- Method information.
+ 方法信息
  */
 @interface YYClassMethodInfo : NSObject
 @property (nonatomic, assign, readonly) Method method;                  ///< method opaque struct
@@ -119,7 +119,7 @@ YYEncodingType YYEncodingGetType(const char *typeEncoding);
 
 
 /**
- Property information.
+ 属性信息
  */
 @interface YYClassPropertyInfo : NSObject
 @property (nonatomic, assign, readonly) objc_property_t property; ///< property's opaque struct
@@ -143,7 +143,7 @@ YYEncodingType YYEncodingGetType(const char *typeEncoding);
 
 
 /**
- 一个类的类信息
+ 类信息
  */
 @interface YYClassInfo : NSObject
 @property (nonatomic, assign, readonly) Class cls; ///< class object

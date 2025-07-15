@@ -15,7 +15,7 @@
 
 #define force_inline __inline__ __attribute__((always_inline))
 
-/// Foundation Class Type
+/// Foundation框架下的类型
 typedef NS_ENUM (NSUInteger, YYEncodingNSType) {
     YYEncodingTypeNSUnknown = 0,
     YYEncodingTypeNSString,
@@ -35,7 +35,7 @@ typedef NS_ENUM (NSUInteger, YYEncodingNSType) {
     YYEncodingTypeNSMutableSet,
 };
 
-/// Get the Foundation class type from property info.
+/// 从属性信息中获取Foundation框架下的类型
 static force_inline YYEncodingNSType YYClassGetNSType(Class cls) {
     if (!cls) return YYEncodingTypeNSUnknown;
     if ([cls isSubclassOfClass:[NSMutableString class]]) return YYEncodingTypeNSMutableString;
@@ -56,7 +56,7 @@ static force_inline YYEncodingNSType YYClassGetNSType(Class cls) {
     return YYEncodingTypeNSUnknown;
 }
 
-/// Whether the type is c number.
+/// 是否是 C Number
 static force_inline BOOL YYEncodingTypeIsCNumber(YYEncodingType type) {
     switch (type & YYEncodingTypeMask) {
         case YYEncodingTypeBool:
@@ -75,7 +75,7 @@ static force_inline BOOL YYEncodingTypeIsCNumber(YYEncodingType type) {
     }
 }
 
-/// Parse a number value from 'id'.
+/// 从`id`类型解析一个Number值
 static force_inline NSNumber *YYNSNumberCreateFromID(__unsafe_unretained id value) {
     static NSCharacterSet *dot;
     static NSDictionary *dic;
@@ -131,7 +131,7 @@ static force_inline NSNumber *YYNSNumberCreateFromID(__unsafe_unretained id valu
     return nil;
 }
 
-/// Parse string to date.
+/// 将字符串解析为NSDate
 static force_inline NSDate *YYNSDateFromString(__unsafe_unretained NSString *string) {
     typedef NSDate* (^YYNSDateParseBlock)(NSString *string);
     #define kParserNum 34
@@ -243,8 +243,8 @@ static force_inline NSDate *YYNSDateFromString(__unsafe_unretained NSString *str
 }
 
 
-/// Get the 'NSBlock' class.
-static force_inline Class YYNSBlockClass() {
+/// 获取`NSBlock`类型
+static force_inline Class YYNSBlockClass(void) {
     static Class cls;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
@@ -269,7 +269,7 @@ static force_inline Class YYNSBlockClass() {
  
  length: 20/24/25
  */
-static force_inline NSDateFormatter *YYISODateFormatter() {
+static force_inline NSDateFormatter *YYISODateFormatter(void) {
     static NSDateFormatter *formatter = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
@@ -454,18 +454,18 @@ static force_inline id YYValueForMultiKeys(__unsafe_unretained NSDictionary *dic
 @interface _YYModelMeta : NSObject {
     // 权限修饰符，只能框架内部使用，`@package`只适用于修饰ivar实例变量，不能修饰`@property`属性或方法
     @package
-    YYClassInfo *_classInfo;
-    /// Key:mapped key and key path, Value:_YYModelPropertyMeta.
+    YYClassInfo *_classInfo; // 包含类信息的实例对象
+    /// Key:映射的key, Value:_YYModelPropertyMeta对象
     NSDictionary *_mapper;
-    /// Array<_YYModelPropertyMeta>, all property meta of this model.
+    /// Array<_YYModelPropertyMeta>, 模型类的所有属性元数据数组
     NSArray *_allPropertyMetas;
-    /// Array<_YYModelPropertyMeta>, property meta which is mapped to a key path.
+    /// Array<_YYModelPropertyMeta>, 映射到key的属性元数据数组
     NSArray *_keyPathPropertyMetas;
-    /// Array<_YYModelPropertyMeta>, property meta which is mapped to multi keys.
+    /// Array<_YYModelPropertyMeta>, 映射到多个key的属性元数据数组
     NSArray *_multiKeysPropertyMetas;
-    /// The number of mapped key (and key path), same to _mapper.count.
+    /// 映射键的数量, 等同于 _mapper.count.
     NSUInteger _keyMappedCount;
-    /// Model class type.
+    /// 模型类的类型
     YYEncodingNSType _nsType;
     
     BOOL _hasCustomWillTransformFromDictionary;
@@ -625,7 +625,7 @@ static force_inline id YYValueForMultiKeys(__unsafe_unretained NSDictionary *dic
     return self;
 }
 
-/// Returns the cached model class meta
+/// 返回缓存的模型类元数据
 + (instancetype)metaWithClass:(Class)cls {
     if (!cls) return nil;
     static CFMutableDictionaryRef cache;
@@ -1484,9 +1484,11 @@ static NSString *ModelDescription(NSObject *model) {
     // 获取当前类的类对象
     Class cls = [self class];
     
-    //
+    // 获取到包含模型类类信息的实例对象
     _YYModelMeta *modelMeta = [_YYModelMeta metaWithClass:cls];
+    
     if (modelMeta->_hasCustomClassFromDictionary) {
+        
         cls = [cls modelCustomClassForDictionary:dictionary] ?: cls;
     }
     

@@ -267,12 +267,11 @@ NS_ASSUME_NONNULL_BEGIN
 @optional
 
 /**
- Custom property mapper.
+ 自定义属性映射关系
  
- @discussion If the key in JSON/Dictionary does not match to the model's property name,
- implements this method and returns the additional mapper.
+ @discussion 如果在数据json或字典中没有找到和模型属性名匹配的key，实现这个方法返回带有映射关系的映射器
  
- Example:
+ 例子:
     
     json: 
         {
@@ -297,24 +296,22 @@ NS_ASSUME_NONNULL_BEGIN
         + (NSDictionary *)modelCustomPropertyMapper {
             return @{@"name"  : @"n",
                      @"page"  : @"p",
-                     @"desc"  : @"ext.desc",
-                     @"bookID": @[@"id", @"ID", @"book_id"]};
-        }
+                     @"desc"  : @"ext.desc", // 将数据中ext内部的desc字段映射到数据模型desc属性中
+                     @"bookID": @[@"id", @"ID", @"book_id"]}; // 数据中的id、ID、book_id都会被映射到YYBook模型的bookID属性中
         @end
     @endcode
  
- @return A custom mapper for properties.
+ @return 一个用于属性的自定义映射器
  */
 + (nullable NSDictionary<NSString *, id> *)modelCustomPropertyMapper;
 
 /**
- The generic class mapper for container properties.
+ 容器属性的泛型类映射器
  
- @discussion If the property is a container object, such as NSArray/NSSet/NSDictionary,
- implements this method and returns a property->class mapper, tells which kind of 
- object will be add to the array/set/dictionary.
+ @discussion 如果属性的类型是NSArray/NSSet/NSDictionary对象， 实现这个方法返回一个 属性->类 的映射器
+ 通过这个方法描述哪种对象可以被添加到array/set/dictionary中。
  
-  Example:
+  例子:
   @code
         @class YYShadow, YYBorder, YYAttachment;
  
@@ -334,18 +331,16 @@ NS_ASSUME_NONNULL_BEGIN
         @end
  @endcode
  
- @return A class mapper.
+ @return 类映射器
  */
 + (nullable NSDictionary<NSString *, id> *)modelContainerPropertyGenericClass;
 
 /**
- If you need to create instances of different classes during json->object transform,
- use the method to choose custom class based on dictionary data.
+ 如果需要再数据转模型过程中创建不同类的实例，可以使用这个方法通过字典数据选择生成不同类型的模型类
  
- @discussion If the model implements this method, it will be called to determine resulting class
- during `+modelWithJSON:`, `+modelWithDictionary:`, conveting object of properties of parent objects 
- (both singular and containers via `+modelContainerPropertyGenericClass`).
- 
+ @discussion 如果模型类实现了这个方法，该方法会在`+modelWithJSON:`, `+modelWithDictionary:`方法中被调用用来确定最终转换成的模型
+ 类，转换父对象属性的对象，单个还是容器都通过`+modelContainerPropertyGenericClass`
+  
  Example:
  @code
         @class YYCircle, YYRectangle, YYLine;
@@ -354,83 +349,71 @@ NS_ASSUME_NONNULL_BEGIN
 
         + (Class)modelCustomClassForDictionary:(NSDictionary*)dictionary {
             if (dictionary[@"radius"] != nil) {
-                return [YYCircle class];
+                return [YYCircle class]; // 如果数据中`radius`不为空，模型类转为YYCircle
             } else if (dictionary[@"width"] != nil) {
-                return [YYRectangle class];
+                return [YYRectangle class]; // 如果数据中`width`不为空，模型类转为YYRectangle
             } else if (dictionary[@"y2"] != nil) {
-                return [YYLine class];
+                return [YYLine class]; // 如果数据中`y2`不为空，模型类转为YYLine
             } else {
-                return [self class];
+                return [self class]; // 如果都为空，则转为当前类
             }
         }
 
         @end
  @endcode
 
- @param dictionary The json/kv dictionary.
+ @param dictionary json或键值对字典
  
- @return Class to create from this dictionary, `nil` to use current class.
+ @return 根据数据字典返回的类，如果返回nil则使用当前类
 
  */
 + (nullable Class)modelCustomClassForDictionary:(NSDictionary *)dictionary;
 
 /**
- All the properties in blacklist will be ignored in model transform process.
- Returns nil to ignore this feature.
+ 黑名单中的属性在数据转模型过程中将被忽略（不转换）
  
- @return An array of property's name.
+ @return 包含属性名称的数组
  */
 + (nullable NSArray<NSString *> *)modelPropertyBlacklist;
 
 /**
- If a property is not in the whitelist, it will be ignored in model transform process.
- Returns nil to ignore this feature.
+ 添加到白名单的属性将会被转换，没有加入白名单的将会被忽略。
  
- @return An array of property's name.
+ @return 包含属性名称的数组
  */
 + (nullable NSArray<NSString *> *)modelPropertyWhitelist;
 
 /**
- This method's behavior is similar to `- (BOOL)modelCustomTransformFromDictionary:(NSDictionary *)dic;`, 
- but be called before the model transform.
+ 该方法类似于`- (BOOL)modelCustomTransformFromDictionary:(NSDictionary *)dic;`
+ 区别在于该方法会在模型转换之前被调用
  
- @discussion If the model implements this method, it will be called before
- `+modelWithJSON:`, `+modelWithDictionary:`, `-modelSetWithJSON:` and `-modelSetWithDictionary:`.
- If this method returns nil, the transform process will ignore this model.
+ @discussion 如果模型类实现了这个方法，则在执行这几个方法：`+modelWithJSON:`, `+modelWithDictionary:`, `-modelSetWithJSON:` 和 `-modelSetWithDictionary:`之前调用这个方法，如果返回nil，则转换过程将忽略这个模型。
  
- @param dic  The json/kv dictionary.
+ @param dic  json或键值对字典
  
- @return Returns the modified dictionary, or nil to ignore this model.
+ @return 返回修改后的字典
  */
 - (NSDictionary *)modelCustomWillTransformFromDictionary:(NSDictionary *)dic;
 
 /**
- If the default json-to-model transform does not fit to your model object, implement
- this method to do additional process. You can also use this method to validate the 
- model's properties.
+ 如果默认的数据转模型不适合模型类，实现这个方法去添加额外的处理，也可以通过这个方法验证转换后的模型的属性转换情况。
  
- @discussion If the model implements this method, it will be called at the end of
- `+modelWithJSON:`, `+modelWithDictionary:`, `-modelSetWithJSON:` and `-modelSetWithDictionary:`.
- If this method returns NO, the transform process will ignore this model.
+ @discussion 这个方法会在`+modelWithJSON:`, `+modelWithDictionary:`, `-modelSetWithJSON:` 和 `-modelSetWithDictionary:`之后被调用，如果该方法返回NO,则转换过程中会忽略这个模型。
  
- @param dic  The json/kv dictionary.
+ @param dic  json或键值对字典
  
- @return Returns YES if the model is valid, or NO to ignore this model.
+ @return 返回YES代表该方法生效，返回NO则忽略
  */
 - (BOOL)modelCustomTransformFromDictionary:(NSDictionary *)dic;
 
 /**
- If the default model-to-json transform does not fit to your model class, implement
- this method to do additional process. You can also use this method to validate the
- json dictionary.
+ 如果默认的模型转json不适合模型类，实现这个方法去添加额外的处理，也可以通过这个方法验证转换后的json字典
  
- @discussion If the model implements this method, it will be called at the end of
- `-modelToJSONObject` and `-modelToJSONString`.
- If this method returns NO, the transform process will ignore this json dictionary.
+ @discussion 这个方法会在`-modelToJSONObject` and `-modelToJSONString`执行后被调用，如果返回NO则转换过程将忽略这个json字典
  
- @param dic  The json dictionary.
+ @param dic json字典
  
- @return Returns YES if the model is valid, or NO to ignore this model.
+ @return 返回YES代表该方法生效，返回NO则忽略
  */
 - (BOOL)modelCustomTransformToDictionary:(NSMutableDictionary *)dic;
 
