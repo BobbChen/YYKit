@@ -14,18 +14,17 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- Provide some data-model method:
+ 提供了一些数据模型相互转换的方法
  
- * Convert json to any object, or convert any object to json.
- * Set object properties with a key-value dictionary (like KVC).
- * Implementations of `NSCoding`, `NSCopying`, `-hash` and `-isEqual:`.
+ * 把json转换成对象，或者把对象转换成json
+ * 设置对象属性用键值对字典
+ * 实现了 `NSCoding`, `NSCopying`, `-hash` 和 `-isEqual:`.
  
- See `YYModel` protocol for custom methods.
+ See `YYModel` 协议中包含自定义方法
  
- 
- Sample Code:
+ 示例代码:
     
-     ********************** json convertor *********************
+     ********************** json 转换 *********************
  @code
      @interface YYAuthor : NSObject
      @property (nonatomic, strong) NSString *name;
@@ -43,17 +42,17 @@ NS_ASSUME_NONNULL_BEGIN
      @end
     
      int main() {
-         // create model from json
+         // 通过json数据创建模型对象
          YYBook *book = [YYBook modelWithJSON:@"{\"name\": \"Harry Potter\", \"pages\": 256, \"author\": {\"name\": \"J.K.Rowling\", \"birthday\": \"1965-07-31\" }}"];
  
-         // convert model to json
+         // 把模型对象转换成json
          NSString *json = [book modelToJSONString];
          // {"author":{"name":"J.K.Rowling","birthday":"1965-07-31T00:00:00+0000"},"name":"Harry Potter","pages":256}
      }
  @endcode
  
  
-     ********************** Coding/Copying/hash/equal *********************
+     ********************** 协议相关 *********************
  @code
      @interface YYShadow :NSObject <NSCoding, NSCopying>
      @property (nonatomic, copy) NSString *name;
@@ -73,12 +72,11 @@ NS_ASSUME_NONNULL_BEGIN
 @interface NSObject (YYModel)
 
 /**
- Creates and returns a new instance of the receiver from a json.
- This method is thread-safe.
+ 通过json创建并返回一个调用该方法类的实例对象，该方法线程安全。
  
- @param json  A json object in `NSDictionary`, `NSString` or `NSData`.
+ @param json  `NSDictionary`, `NSString` 或 `NSData`类型的json对象
  
- @return A new instance created from the json, or nil if an error occurs.
+ @return 通过json构建的实例
  */
 + (nullable instancetype)modelWithJSON:(id)json;
 
@@ -102,98 +100,91 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable instancetype)modelWithDictionary:(NSDictionary *)dictionary;
 
 /**
- Set the receiver's properties with a json object.
+ 用json对象给调用类的属性赋值
  
- @discussion Any invalid data in json will be ignored.
+ @discussion json中无效的数据会被忽略
  
- @param json  A json object of `NSDictionary`, `NSString` or `NSData`, mapped to the
- receiver's properties.
+ @param json  `NSDictionary`, `NSString` 或 `NSData`类型的json对象, 映射到调用类的属性
  
- @return Whether succeed.
+ @return 是否成功
  */
 - (BOOL)modelSetWithJSON:(id)json;
 
 /**
- Set the receiver's properties with a key-value dictionary.
+ 用键值对字典给调用类的属性赋值
  
- @param dic  A key-value dictionary mapped to the receiver's properties.
- Any invalid key-value pair in dictionary will be ignored.
+ @param dic  键值对字典，映射调用类的属性，字典中无效的键值对会被忽略
  
- @discussion The key in `dictionary` will mapped to the reciever's property name,
- and the value will set to the property. If the value's type doesn't match the
- property, this method will try to convert the value based on these rules:
- 
+ @discussion 字典中的键映射到调用类的属性名，字典中的值会赋值给对应的属性值。如果字典中值的类型和类中属性类型不匹配
+ 该方法将会按以下规则进行转换：
      `NSString`, `NSNumber` -> c number, such as BOOL, int, long, float, NSUInteger...
      `NSString` -> NSDate, parsed with format "yyyy-MM-dd'T'HH:mm:ssZ", "yyyy-MM-dd HH:mm:ss" or "yyyy-MM-dd".
      `NSString` -> NSURL.
      `NSValue` -> struct or union, such as CGRect, CGSize, ...
      `NSString` -> SEL, Class.
  
- @return Whether succeed.
+ @return 是否成功
  */
 - (BOOL)modelSetWithDictionary:(NSDictionary *)dic;
 
 /**
- Generate a json object from the receiver's properties.
+ 通过调用类的属性生成json对象
  
- @return A json object in `NSDictionary` or `NSArray`, or nil if an error occurs.
- See [NSJSONSerialization isValidJSONObject] for more information.
+ @return `NSDictionary` 或 `NSArray`类型的json对象 A json object in , or nil if an error occurs.
+ See [NSJSONSerialization isValidJSONObject] 可以获取更多信息
  
- @discussion Any of the invalid property is ignored.
- If the reciver is `NSArray`, `NSDictionary` or `NSSet`, it just convert
- the inner object to json object.
+ @discussion 无效的属性会被忽略，如果调用该方法的类是`NSArray`, `NSDictionary` 或 `NSSet`，这个方法只会把内部对象转换成
+ json对象
  */
 - (nullable id)modelToJSONObject;
 
 /**
- Generate a json string's data from the receiver's properties.
+ 从调用类的属性生成一个json字符串的数据
  
- @return A json string's data, or nil if an error occurs.
+ @return json字符串数据
  
- @discussion Any of the invalid property is ignored.
- If the reciver is `NSArray`, `NSDictionary` or `NSSet`, it will also convert the 
- inner object to json string.
+ @discussion 调用类中无效的属性会被忽略
+ `NSArray`, `NSDictionary` 或 `NSSet`对象调用该方法, 该方法还会将内部对象转为json字符串数据
  */
 - (nullable NSData *)modelToJSONData;
 
 /**
- Generate a json string from the receiver's properties.
+ 通过调用类的属性生成json字符串.
  
- @return A json string, or nil if an error occurs.
+ @return json字符串.
  
- @discussion Any of the invalid property is ignored.
- If the reciver is `NSArray`, `NSDictionary` or `NSSet`, it will also convert the 
- inner object to json string.
+ @discussion 调用类中无效的属性会被忽略，如果调用类是`NSArray`, `NSDictionary` 或 `NSSet`类型，内部的对象也会
+ 被转换成json字符串
  */
 - (nullable NSString *)modelToJSONString;
 
 /**
- Copy a instance with the receiver's properties.
+ 用调用类的属性复制一个对象
  
- @return A copied instance, or nil if an error occurs.
+ @return 被拷贝的对象
  */
 - (nullable id)modelCopy;
 
 /**
- Encode the receiver's properties to a coder.
+ 将调用类的属性编码到编码器中.
  
- @param aCoder  An archiver object.
+ @param aCoder  归档对象.
  */
 - (void)modelEncodeWithCoder:(NSCoder *)aCoder;
 
 /**
- Decode the receiver's properties from a decoder.
+通过传入的解码器解码调用类的属性
  
- @param aDecoder  An archiver object.
+ @param aDecoder  归档对象.
  
- @return self
+ @return 当前类
  */
 - (id)modelInitWithCoder:(NSCoder *)aDecoder;
 
 /**
- Get a hash code with the receiver's properties.
+ 获取调用类属性的哈希值
  
- @return Hash code.
+ @return 哈希值.
  */
 - (NSUInteger)modelHash;
 
@@ -207,9 +198,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)modelIsEqual:(id)model;
 
 /**
- Description method for debugging purposes based on properties.
+ 基于属性用于调试的描述方法.
  
- @return A string that describes the contents of the receiver.
+ @return 描述调用类内容的字符串.
  */
 - (NSString *)modelDescription;
 
@@ -218,19 +209,17 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 /**
- Provide some data-model method for NSArray.
+ 给数组类型添加的数据模型方法
  */
 @interface NSArray (YYModel)
 
 /**
- Creates and returns an array from a json-array.
- This method is thread-safe.
+ 从json数组创建并返回一个数组，该方法线程安全。
  
- @param cls  The instance's class in array.
- @param json  A json array of `NSArray`, `NSString` or `NSData`.
-              Example: [{"name":"Mary"},{name:"Joe"}]
+ @param cls  数组中实例的类型
+ @param json  json数组，比如: [{"name":"Mary"},{name:"Joe"}]
  
- @return A array, or nil if an error occurs.
+ @return 数组
  */
 + (nullable NSArray *)modelArrayWithClass:(Class)cls json:(id)json;
 
@@ -239,19 +228,17 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 /**
- Provide some data-model method for NSDictionary.
+ 给字典类型添加的数据模型方法
  */
 @interface NSDictionary (YYModel)
 
 /**
- Creates and returns a dictionary from a json.
- This method is thread-safe.
+ 通过json创建并返回一个字典，该方法线程安全。
  
- @param cls  The value instance's class in dictionary.
- @param json  A json dictionary of `NSDictionary`, `NSString` or `NSData`.
-              Example: {"user1":{"name","Mary"}, "user2": {name:"Joe"}}
+ @param cls  字典中值实例的类
+ @param json  json字典，比如: {"user1":{"name","Mary"}, "user2": {name:"Joe"}}
  
- @return A dictionary, or nil if an error occurs.
+ @return 字典
  */
 + (nullable NSDictionary *)modelDictionaryWithClass:(Class)cls json:(id)json;
 @end
