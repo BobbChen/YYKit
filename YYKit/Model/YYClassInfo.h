@@ -157,8 +157,9 @@ YYEncodingType YYEncodingGetType(const char *typeEncoding);
 @property (nullable, nonatomic, strong, readonly) NSDictionary<NSString *, YYClassPropertyInfo *> *propertyInfos; ///< properties
 
 /**
- If the class is changed (for example: you add a method to this class with
- 'class_addMethod()'), you should call this method to refresh the class info cache.
+ 如果通过runtime修改了类比如通过`class_addMethod()`给类添加了方法，则需要调用该方法刷新类信息缓存。
+ 
+ 调用这个方法之后，`needUpdate` 会返回 `YES`，并且应该调用
  
  After called this method, `needUpdate` will returns `YES`, and you should call 
  'classInfoWithClass' or 'classInfoWithClassName' to get the updated class info.
@@ -166,10 +167,9 @@ YYEncodingType YYEncodingGetType(const char *typeEncoding);
 - (void)setNeedUpdate;
 
 /**
- If this method returns `YES`, you should stop using this instance and call
- `classInfoWithClass` or `classInfoWithClassName` to get the updated class info.
+ 如果该方法返回`YES`, 则不应该再使用当前实例对象，需要调用`classInfoWithClass` 或 `classInfoWithClassName`来获取更新类信息之后的对象
  
- @return Whether this class info need update.
+ @return 类信息是否需要更新
  */
 - (BOOL)needUpdate;
 

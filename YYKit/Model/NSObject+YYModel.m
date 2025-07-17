@@ -468,9 +468,28 @@ static force_inline id YYValueForMultiKeys(__unsafe_unretained NSDictionary *dic
     /// 模型类的类型
     YYEncodingNSType _nsType;
     
+    /**
+     模型类是否遵循`YYModel`协议实现了`modelCustomWillTransformFromDictionary`方法
+     该方法可以在数据转模型之前添加额外的数据处理操作
+     */
     BOOL _hasCustomWillTransformFromDictionary;
+    
+    /**
+     模型类是否遵循`YYModel`协议实现了`modelCustomTransformFromDictionary`方法
+     该方法可以在数据转模型后添加额外的数据处理操作
+     */
     BOOL _hasCustomTransformFromDictionary;
+    
+    /**
+     模型类是否遵循`YYModel`协议实现了`modelCustomTransformToDictionary`方法
+     该方法可以在模型转json后添加额外的数据处理操作
+     */
     BOOL _hasCustomTransformToDictionary;
+    
+    /**
+     模型类是否遵循`YYModel`协议实现了`modelCustomClassForDictionary`方法
+     该方法可以通过字典中的值来决定生成不同的模型类
+     */
     BOOL _hasCustomClassFromDictionary;
 }
 @end
@@ -625,24 +644,44 @@ static force_inline id YYValueForMultiKeys(__unsafe_unretained NSDictionary *dic
     return self;
 }
 
-/// 返回缓存的模型类元数据
+/**
+ 返回包含模型类元数据的实例对象
+ 该方法会先从全局字典缓存中查找是否创建过该模型类元数据对象
+ 如果缓存中没有，则创建一个放入全局字典
+ */
 + (instancetype)metaWithClass:(Class)cls {
+    // 如果类对象为nil，则跳出
     if (!cls) return nil;
+    /**
+     使用CoreFoundation框架下的静态可变字典作为缓存，
+     `static`保证了该字典在应用程序生命周期内会一直存在
+    */
     static CFMutableDictionaryRef cache;
     static dispatch_once_t onceToken;
+    // 多线程环境下使用GCD的信号量实现线程安全
     static dispatch_semaphore_t lock;
     dispatch_once(&onceToken, ^{
         cache = CFDictionaryCreateMutable(CFAllocatorGetDefault(), 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+        // 多线程访问下同一时间只允许一个线程访问缓存
         lock = dispatch_semaphore_create(1);
     });
+    // 读缓存-加锁
     dispatch_semaphore_wait(lock, DISPATCH_TIME_FOREVER);
+    // 以为类对象为key，从缓存中获取对应的类对象元数据实例
     _YYModelMeta *meta = CFDictionaryGetValue(cache, (__bridge const void *)(cls));
+    // 读缓存结束-释放锁
     dispatch_semaphore_signal(lock);
+    
+    // 如果缓存中没有该模型类元数据或者说缓存中有但是该模型类的类信息需要被更新
     if (!meta || meta->_classInfo.needUpdate) {
+        // 根据类对象重新创建一个元数据实例对象
         meta = [[_YYModelMeta alloc] initWithClass:cls];
         if (meta) {
+            // 写缓存-加锁
             dispatch_semaphore_wait(lock, DISPATCH_TIME_FOREVER);
+            // 将新的元数据实例对象写入缓存字典中
             CFDictionarySetValue(cache, (__bridge const void *)(cls), (__bridge const void *)(meta));
+            // 写缓存结束-释放锁
             dispatch_semaphore_signal(lock);
         }
     }
@@ -1481,10 +1520,10 @@ static NSString *ModelDescription(NSObject *model) {
     // 判断是否是字典类型
     if (![dictionary isKindOfClass:[NSDictionary class]]) return nil;
     
-    // 获取当前类的类对象
+    // 当前类的类对象
     Class cls = [self class];
     
-    // 获取到包含模型类类信息的实例对象
+    // 通过模型类的类对象获取到包含模型类类信息的实例对象
     _YYModelMeta *modelMeta = [_YYModelMeta metaWithClass:cls];
     
     if (modelMeta->_hasCustomClassFromDictionary) {
@@ -1492,7 +1531,10 @@ static NSString *ModelDescription(NSObject *model) {
         cls = [cls modelCustomClassForDictionary:dictionary] ?: cls;
     }
     
+    // 当前类的实例对象
     NSObject *one = [cls new];
+    
+    
     if ([one modelSetWithDictionary:dictionary]) return one;
     return nil;
 }
