@@ -496,11 +496,12 @@ static force_inline id YYValueForMultiKeys(__unsafe_unretained NSDictionary *dic
 
 @implementation _YYModelMeta
 - (instancetype)initWithClass:(Class)cls {
+    // 根据类对象创建类信息
     YYClassInfo *classInfo = [YYClassInfo classInfoWithClass:cls];
     if (!classInfo) return nil;
     self = [super init];
     
-    // Get black list
+    // 模型类如果实现了黑名单方法，则调用黑名单方法获取不需要转换的属性
     NSSet *blacklist = nil;
     if ([cls respondsToSelector:@selector(modelPropertyBlacklist)]) {
         NSArray *properties = [(id<YYModel>)cls modelPropertyBlacklist];
@@ -509,7 +510,7 @@ static force_inline id YYValueForMultiKeys(__unsafe_unretained NSDictionary *dic
         }
     }
     
-    // Get white list
+    // 模型类如果实现了白名单方法，则调用白名单方法获取需要转换的属性
     NSSet *whitelist = nil;
     if ([cls respondsToSelector:@selector(modelPropertyWhitelist)]) {
         NSArray *properties = [(id<YYModel>)cls modelPropertyWhitelist];
@@ -518,13 +519,14 @@ static force_inline id YYValueForMultiKeys(__unsafe_unretained NSDictionary *dic
         }
     }
     
-    // Get container property's generic class
+    // 模型类如果实现了包含属性的泛型类方法，则调用该方法获取集合类型的属性内部包含的模型类信息
     NSDictionary *genericMapper = nil;
     if ([cls respondsToSelector:@selector(modelContainerPropertyGenericClass)]) {
         genericMapper = [(id<YYModel>)cls modelContainerPropertyGenericClass];
         if (genericMapper) {
             NSMutableDictionary *tmp = [NSMutableDictionary new];
             [genericMapper enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+                // 模型类中返回的字典的key必须是字符串类型
                 if (![key isKindOfClass:[NSString class]]) return;
                 Class meta = object_getClass(obj);
                 if (!meta) return;
@@ -1102,9 +1104,9 @@ static void ModelSetValueForProperty(__unsafe_unretained id model,
                 
             case YYEncodingTypeBlock: {
                 if (isNull) {
-                    ((void (*)(id, SEL, void (^)()))(void *) objc_msgSend)((id)model, meta->_setter, (void (^)())NULL);
+                    ((void (*)(id, SEL, void (^)(void)))(void *) objc_msgSend)((id)model, meta->_setter, (void (^)(void))NULL);
                 } else if ([value isKindOfClass:YYNSBlockClass()]) {
-                    ((void (*)(id, SEL, void (^)()))(void *) objc_msgSend)((id)model, meta->_setter, (void (^)())value);
+                    ((void (*)(id, SEL, void (^)(void)))(void *) objc_msgSend)((id)model, meta->_setter, (void (^)(void))value);
                 }
             } break;
                 
@@ -1145,15 +1147,16 @@ typedef struct {
 } ModelSetContext;
 
 /**
- Apply function for dictionary, to set the key-value pair to model.
+ `CFDictionaryApplyFunction`方法中传入遍历字典键值对时自定义方法，该自定义方法内部实现了将键值对赋值给模型类的操作
  
- @param _key     should not be nil, NSString.
- @param _value   should not be nil.
- @param _context _context.modelMeta and _context.model should not be nil.
+ @param _key     非空字符串类型的key
+ @param _value   非空
+ @param _context 含有模型类信息以及模型类本身的上下文
  */
 static void ModelSetWithDictionaryFunction(const void *_key, const void *_value, void *_context) {
-    ModelSetContext *context = _context;
+    ModelSetContext *context = _context; 
     __unsafe_unretained _YYModelMeta *meta = (__bridge _YYModelMeta *)(context->modelMeta);
+    // 通过数据源字典中的key查找模型类
     __unsafe_unretained _YYModelPropertyMeta *propertyMeta = [meta->_mapper objectForKey:(__bridge id)(_key)];
     __unsafe_unretained id model = (__bridge id)(context->model);
     while (propertyMeta) {
@@ -1526,15 +1529,19 @@ static NSString *ModelDescription(NSObject *model) {
     // 通过模型类的类对象获取到包含模型类类信息的实例对象
     _YYModelMeta *modelMeta = [_YYModelMeta metaWithClass:cls];
     
+    /**
+     模型类是否遵循`YYModel`协议实现了`modelCustomClassForDictionary`方法。
+     该方法可以根据数据来动态返回不同类型作为转换后的模型类
+    */
     if (modelMeta->_hasCustomClassFromDictionary) {
-        
+        // 调用该模型类自定义的实现，获取需要转换的模型类的类型
         cls = [cls modelCustomClassForDictionary:dictionary] ?: cls;
     }
     
-    // 当前类的实例对象
+    // 模型类的实例对象
     NSObject *one = [cls new];
     
-    
+    // 如果模型类实例对象属性通过数据字典被成功赋值，则返回该模型类实例
     if ([one modelSetWithDictionary:dictionary]) return one;
     return nil;
 }
@@ -1544,24 +1551,43 @@ static NSString *ModelDescription(NSObject *model) {
     return [self modelSetWithDictionary:dic];
 }
 
+/**
+ 通过数据字典给模型类的实例属性赋值
+ @params dic 数据源
+ @return 是否成功赋值
+ */
 - (BOOL)modelSetWithDictionary:(NSDictionary *)dic {
+    // 数据源判空处理
     if (!dic || dic == (id)kCFNull) return NO;
+    // 类型判断
     if (![dic isKindOfClass:[NSDictionary class]]) return NO;
     
+    // 获取含有当前模型类信息的元数据对象
     _YYModelMeta *modelMeta = [_YYModelMeta metaWithClass:object_getClass(self)];
+    
+    // 如果模型类没有属性则返回NO
     if (modelMeta->_keyMappedCount == 0) return NO;
     
+    // 如果模型类实现了`modelCustomWillTransformFromDictionary`方法需要在转换之前对数据字典进行处理
+    // 则先调用该类的实现的方法，获取处理后的数据源字典
     if (modelMeta->_hasCustomWillTransformFromDictionary) {
+        // ((id<YYModel>)self): 将self强制转换为遵循了`YYModel`协议的对象类型，这样能调用`modelCustomWillTransformFromDictionary`方法
         dic = [((id<YYModel>)self) modelCustomWillTransformFromDictionary:dic];
+        
+        // 类型校验
         if (![dic isKindOfClass:[NSDictionary class]]) return NO;
     }
     
+    // 将context结构体内部的成员变量都初始化为0/NULL
     ModelSetContext context = {0};
-    context.modelMeta = (__bridge void *)(modelMeta);
-    context.model = (__bridge void *)(self);
-    context.dictionary = (__bridge void *)(dic);
+    // 给结构体成员进行赋值
+    context.modelMeta = (__bridge void *)(modelMeta); // 元数据对象
+    context.model = (__bridge void *)(self); // 当前类的实例对象
+    context.dictionary = (__bridge void *)(dic); // 数据字典
     
+    // 模型类中属性个数大于等于数据源字典键值对的数量
     if (modelMeta->_keyMappedCount >= CFDictionaryGetCount((CFDictionaryRef)dic)) {
+        // 对数据源字典中的每个键值对调用一次`ModelSetWithDictionaryFunction`方法
         CFDictionaryApplyFunction((CFDictionaryRef)dic, ModelSetWithDictionaryFunction, &context);
         if (modelMeta->_keyPathPropertyMetas) {
             CFArrayApplyFunction((CFArrayRef)modelMeta->_keyPathPropertyMetas,

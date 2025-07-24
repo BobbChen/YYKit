@@ -15,10 +15,10 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- Type encoding's type.
+ 类型的复合编码，包含限定符、类型以及属性
  */
 typedef NS_OPTIONS(NSUInteger, YYEncodingType) {
-    YYEncodingTypeMask       = 0xFF, ///< mask of type value
+    YYEncodingTypeMask       = 0xFF, ///< 类型掩码
     YYEncodingTypeUnknown    = 0, ///< unknown
     YYEncodingTypeVoid       = 1, ///< void
     YYEncodingTypeBool       = 2, ///< bool
@@ -43,7 +43,7 @@ typedef NS_OPTIONS(NSUInteger, YYEncodingType) {
     YYEncodingTypeCString    = 21, ///< char*
     YYEncodingTypeCArray     = 22, ///< char[10] (for example)
     
-    YYEncodingTypeQualifierMask   = 0xFF00,   ///< mask of qualifier
+    YYEncodingTypeQualifierMask   = 0xFF00,   ///< 限定符掩码
     YYEncodingTypeQualifierConst  = 1 << 8,  ///< const
     YYEncodingTypeQualifierIn     = 1 << 9,  ///< in
     YYEncodingTypeQualifierInout  = 1 << 10, ///< inout
@@ -52,7 +52,7 @@ typedef NS_OPTIONS(NSUInteger, YYEncodingType) {
     YYEncodingTypeQualifierByref  = 1 << 13, ///< byref
     YYEncodingTypeQualifierOneway = 1 << 14, ///< oneway
     
-    YYEncodingTypePropertyMask         = 0xFF0000, ///< mask of property
+    YYEncodingTypePropertyMask         = 0xFF0000, ///< 属性掩码
     YYEncodingTypePropertyReadonly     = 1 << 16, ///< readonly
     YYEncodingTypePropertyCopy         = 1 << 17, ///< copy
     YYEncodingTypePropertyRetain       = 1 << 18, ///< retain
@@ -64,30 +64,30 @@ typedef NS_OPTIONS(NSUInteger, YYEncodingType) {
 };
 
 /**
- Get the type from a Type-Encoding string.
+ 通过类型编码字符串获取类型格式
  
  @discussion See also:
  https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html
  https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtPropertyIntrospection.html
  
- @param typeEncoding  A Type-Encoding string.
- @return The encoding type.
+ @param typeEncoding  类型编码字符串
+ @return 编码类型
  */
 YYEncodingType YYEncodingGetType(const char *typeEncoding);
 
 
 /**
- 实例变量信息
+ 类成员变量信息
  */
 @interface YYClassIvarInfo : NSObject
-@property (nonatomic, assign, readonly) Ivar ivar;              ///< ivar opaque struct
-@property (nonatomic, strong, readonly) NSString *name;         ///< Ivar's name
-@property (nonatomic, assign, readonly) ptrdiff_t offset;       ///< Ivar's offset
-@property (nonatomic, strong, readonly) NSString *typeEncoding; ///< Ivar's type encoding
-@property (nonatomic, assign, readonly) YYEncodingType type;    ///< Ivar's type
+@property (nonatomic, assign, readonly) Ivar ivar;              ///< 不透明的成员变量结构体
+@property (nonatomic, strong, readonly) NSString *name;         ///< 成员变量名称
+@property (nonatomic, assign, readonly) ptrdiff_t offset;       ///< 成员变量的偏移
+@property (nonatomic, strong, readonly) NSString *typeEncoding; ///< 成员变量的类型编码
+@property (nonatomic, assign, readonly) YYEncodingType type;    ///< 成员变量的类型
 
 /**
- Creates and returns an ivar info object.
+ 构建一个含有成员变量信息的对象
  
  @param ivar ivar opaque struct
  @return A new object, or nil if an error occurs.
@@ -97,21 +97,21 @@ YYEncodingType YYEncodingGetType(const char *typeEncoding);
 
 
 /**
- 方法信息
+ 类方法信息
  */
 @interface YYClassMethodInfo : NSObject
-@property (nonatomic, assign, readonly) Method method;                  ///< method opaque struct
-@property (nonatomic, strong, readonly) NSString *name;                 ///< method name
-@property (nonatomic, assign, readonly) SEL sel;                        ///< method's selector
-@property (nonatomic, assign, readonly) IMP imp;                        ///< method's implementation
-@property (nonatomic, strong, readonly) NSString *typeEncoding;         ///< method's parameter and return types
-@property (nonatomic, strong, readonly) NSString *returnTypeEncoding;   ///< return value's type
-@property (nullable, nonatomic, strong, readonly) NSArray<NSString *> *argumentTypeEncodings; ///< array of arguments' type
+@property (nonatomic, assign, readonly) Method method;                  ///< 原始Method
+@property (nonatomic, strong, readonly) NSString *name;                 ///< 方法名
+@property (nonatomic, assign, readonly) SEL sel;                        ///< 方法选择器
+@property (nonatomic, assign, readonly) IMP imp;                        ///< 方法实现的首地址
+@property (nonatomic, strong, readonly) NSString *typeEncoding;         ///< 方法的类型编码（参数+返回）
+@property (nonatomic, strong, readonly) NSString *returnTypeEncoding;   ///< 方法返回值的类型编码
+@property (nullable, nonatomic, strong, readonly) NSArray<NSString *> *argumentTypeEncodings; ///< 包含方法参数的类型编码的数组
 
 /**
- Creates and returns a method info object.
+ 创建并返回包含方法信息的对象
  
- @param method method opaque struct
+ @param method 不透明类型`Method`
  @return A new object, or nil if an error occurs.
  */
 - (instancetype)initWithMethod:(Method)method;
@@ -122,18 +122,18 @@ YYEncodingType YYEncodingGetType(const char *typeEncoding);
  属性信息
  */
 @interface YYClassPropertyInfo : NSObject
-@property (nonatomic, assign, readonly) objc_property_t property; ///< property's opaque struct
-@property (nonatomic, strong, readonly) NSString *name;           ///< property's name
-@property (nonatomic, assign, readonly) YYEncodingType type;      ///< property's type
-@property (nonatomic, strong, readonly) NSString *typeEncoding;   ///< property's encoding value
-@property (nonatomic, strong, readonly) NSString *ivarName;       ///< property's ivar name
+@property (nonatomic, assign, readonly) objc_property_t property; ///< 属性的不透明类型
+@property (nonatomic, strong, readonly) NSString *name;           ///< 属性名
+@property (nonatomic, assign, readonly) YYEncodingType type;      ///< 属性类型
+@property (nonatomic, strong, readonly) NSString *typeEncoding;   ///< 属性的类型编码
+@property (nonatomic, strong, readonly) NSString *ivarName;       ///< 属性的成员变量名称
 @property (nullable, nonatomic, assign, readonly) Class cls;      ///< may be nil
 @property (nullable, nonatomic, strong, readonly) NSArray<NSString *> *protocols; ///< may nil
-@property (nonatomic, assign, readonly) SEL getter;               ///< getter (nonnull)
-@property (nonatomic, assign, readonly) SEL setter;               ///< setter (nonnull)
+@property (nonatomic, assign, readonly) SEL getter;               ///< 属性getter方法 (非空)
+@property (nonatomic, assign, readonly) SEL setter;               ///< 属性的setter方法 (非空)
 
 /**
- Creates and returns a property info object.
+ 创建并返回包含属性信息的对象
  
  @param property property opaque struct
  @return A new object, or nil if an error occurs.
@@ -146,15 +146,15 @@ YYEncodingType YYEncodingGetType(const char *typeEncoding);
  类信息
  */
 @interface YYClassInfo : NSObject
-@property (nonatomic, assign, readonly) Class cls; ///< class object
-@property (nullable, nonatomic, assign, readonly) Class superCls; ///< super class object
-@property (nullable, nonatomic, assign, readonly) Class metaCls;  ///< class's meta class object
-@property (nonatomic, readonly) BOOL isMeta; ///< whether this class is meta class
-@property (nonatomic, strong, readonly) NSString *name; ///< class name
-@property (nullable, nonatomic, strong, readonly) YYClassInfo *superClassInfo; ///< super class's class info
-@property (nullable, nonatomic, strong, readonly) NSDictionary<NSString *, YYClassIvarInfo *> *ivarInfos; ///< ivars
-@property (nullable, nonatomic, strong, readonly) NSDictionary<NSString *, YYClassMethodInfo *> *methodInfos; ///< methods
-@property (nullable, nonatomic, strong, readonly) NSDictionary<NSString *, YYClassPropertyInfo *> *propertyInfos; ///< properties
+@property (nonatomic, assign, readonly) Class cls; ///< 类对象
+@property (nullable, nonatomic, assign, readonly) Class superCls; ///< 父类对象
+@property (nullable, nonatomic, assign, readonly) Class metaCls;  ///< 类的元类对象
+@property (nonatomic, readonly) BOOL isMeta; ///< 当前类是否是元类
+@property (nonatomic, strong, readonly) NSString *name; ///< 当前类雷鸣
+@property (nullable, nonatomic, strong, readonly) YYClassInfo *superClassInfo; ///< 父类的类信息
+@property (nullable, nonatomic, strong, readonly) NSDictionary<NSString *, YYClassIvarInfo *> *ivarInfos; ///< 成员变量信息字典
+@property (nullable, nonatomic, strong, readonly) NSDictionary<NSString *, YYClassMethodInfo *> *methodInfos; ///< 方法信息字典
+@property (nullable, nonatomic, strong, readonly) NSDictionary<NSString *, YYClassPropertyInfo *> *propertyInfos; ///< 属性信息字典
 
 /**
  如果通过runtime修改了类比如通过`class_addMethod()`给类添加了方法，则需要调用该方法刷新类信息缓存。
