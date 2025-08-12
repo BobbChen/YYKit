@@ -212,8 +212,8 @@ YYEncodingType YYEncodingGetType(const char *typeEncoding) {
     YYEncodingType type = 0;
     unsigned int attrCount;
     /**
-     获取属性详细信息
-     `property_copyAttributeList` 会获取到属性详细信息
+     获取模型类中的全部属性
+     `property_copyAttributeList` 会获取到模型类中的全部属性信息以及属性详细信息
      包括属性的类型、原子性/非原子性、内存策略、以及该属性的ivar成员变量
      */
     
@@ -250,7 +250,11 @@ YYEncodingType YYEncodingGetType(const char *typeEncoding) {
                         if ([scanner scanUpToCharactersFromSet: [NSCharacterSet characterSetWithCharactersInString:@"\"<"] intoString:&clsName]) {
                             if (clsName.length) _cls = objc_getClass(clsName.UTF8String);
                         }
-                        
+                        /**
+                         这里需要注意，对于`NSArray<NSString *> names`这样的属性，`NSString *`泛型不会包含在
+                         属性信息中，这是因为`<NSString *>`是轻量级泛型，只会应用在编译期，在运行时阶段会去除这种轻量级泛型信息
+                         所以对于`names`这样的属性，获取到的属性信息只会是`NSArray`而不是`NSArray<NSString *>`
+                         */
                         NSMutableArray *protocols = nil;
                         while ([scanner scanString:@"<" intoString:NULL]) {
                             NSString* protocol = nil;
@@ -277,10 +281,10 @@ YYEncodingType YYEncodingGetType(const char *typeEncoding) {
             case 'C': { // copy
                 type |= YYEncodingTypePropertyCopy;
             } break;
-            case '&': { // 默认修饰符，比如readwrite
+            case '&': { // strong
                 type |= YYEncodingTypePropertyRetain;
             } break;
-            case 'N': { // nonatomic 非原子性
+            case 'N': { // nonatomic
                 type |= YYEncodingTypePropertyNonatomic;
             } break;
             case 'D': { // dynamic

@@ -150,7 +150,7 @@ YYEncodingType YYEncodingGetType(const char *typeEncoding);
 @property (nullable, nonatomic, assign, readonly) Class superCls; ///< 父类对象
 @property (nullable, nonatomic, assign, readonly) Class metaCls;  ///< 类的元类对象
 @property (nonatomic, readonly) BOOL isMeta; ///< 当前类是否是元类
-@property (nonatomic, strong, readonly) NSString *name; ///< 当前类雷鸣
+@property (nonatomic, strong, readonly) NSString *name; ///< 当前类的类名
 @property (nullable, nonatomic, strong, readonly) YYClassInfo *superClassInfo; ///< 父类的类信息
 @property (nullable, nonatomic, strong, readonly) NSDictionary<NSString *, YYClassIvarInfo *> *ivarInfos; ///< 成员变量信息字典
 @property (nullable, nonatomic, strong, readonly) NSDictionary<NSString *, YYClassMethodInfo *> *methodInfos; ///< 方法信息字典

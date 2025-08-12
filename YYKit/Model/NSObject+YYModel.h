@@ -323,7 +323,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable NSDictionary<NSString *, id> *)modelContainerPropertyGenericClass;
 
 /**
- 如果需要再数据转模型过程中创建不同类的实例，可以使用这个方法通过字典数据选择生成不同类型的模型类
+ 如果需要在数据转模型过程中创建不同类的实例，可以使用这个方法通过字典数据选择生成不同类型的模型类
  
  @discussion 如果模型类实现了这个方法，该方法会在`+modelWithJSON:`, `+modelWithDictionary:`方法中被调用用来确定最终转换成的模型
  类，转换父对象属性的对象，单个还是容器都通过`+modelContainerPropertyGenericClass`
